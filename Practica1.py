@@ -8,31 +8,31 @@ movies = {
     # Películas existentes
     "Avengers End Game": {
         "genres": ["Accion", "Ciencia Ficcion"],
-        "image_path": "AvengersEndGame.jpg"
+        "image_path": r"C:\Users\HP\Documents\ESIME Zacatenco\9no Semestre\Agentes Inteligentes Expertos\Programas\Practcia1\AvengersEndGame.jpg"
     },
     "El diario de una pasion": {
         "genres": ["Drama", "Romance"],
-        "image_path": "ElDiario.jpg"
+        "image_path": r"C:\Users\HP\Documents\ESIME Zacatenco\9no Semestre\Agentes Inteligentes Expertos\Programas\Practcia1\ElDiario.jpg"
     },
     "Harry Potter y la Camara Secreta": {
         "genres": ["Aventura", "Fantasia"],
-        "image_path": "HarryCamaraSecreta.jpg"
+        "image_path": r"C:\Users\HP\Documents\ESIME Zacatenco\9no Semestre\Agentes Inteligentes Expertos\Programas\Practcia1\HarryCamaraSecreta.jpg"
     },
     "Una Esposa de Mentira": {
         "genres": ["Comedia", "Romance"],
-        "image_path": "EsposaMentira.jpg"
+        "image_path": r"C:\Users\HP\Documents\ESIME Zacatenco\9no Semestre\Agentes Inteligentes Expertos\Programas\Practcia1\EsposaMentira.jpg"
     },
     "Apocalypto": {
         "genres": ["Accion", "Aventura"],
-        "image_path": "Apocalypto.jpg"
+        "image_path": r"C:\Users\HP\Documents\ESIME Zacatenco\9no Semestre\Agentes Inteligentes Expertos\Programas\Practcia1\Apocalypto.jpg"
     },
     "Ruega Por Nosotros": {
         "genres": ["Terror", "Suspenso"],
-        "image_path": "RuegaPorNosotros.jpg"
+        "image_path": r"C:\Users\HP\Documents\ESIME Zacatenco\9no Semestre\Agentes Inteligentes Expertos\Programas\Practcia1\RuegaPorNosotros.jpg"
     },
     "Nunca Digas su Nombre": {
         "genres": ["Terror", "Suspenso", "Accion"],
-        "image_path": "NuncaDigasNombre.jpg"
+        "image_path": r"C:\Users\HP\Documents\ESIME Zacatenco\9no Semestre\Agentes Inteligentes Expertos\Programas\Practcia1\NuncaDigasNombre.jpg"
     },
 }
 
