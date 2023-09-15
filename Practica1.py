@@ -1,131 +1,181 @@
 import tkinter as tk
 from tkinter import ttk
-import requests
+from PIL import Image, ImageTk
+from tkinter import messagebox
 
-# Función para obtener recomendaciones basadas en el filtro seleccionado
-def obtener_recomendaciones():
-    resultado.delete(1.0, tk.END)
-    
-    # Obtiene el filtro seleccionado por el usuario
-    filtro = filtro_combobox.get()
-    
-    if not filtro:
-        return
-    
-    if filtro == "Estrenos":
-        # Obtener películas en cartelera
-        url = "https://api.themoviedb.org/3/movie/now_playing"
-        params = {
-            "api_key": "3d16ede65af012c2020d73640a669ddf",
-            "language": "es-ES",
-            "page": 1
-        }
-    elif filtro == "Cine de Oro":
-        # Obtener películas clásicas de "Cine de Oro"
-        url = "https://api.themoviedb.org/3/discover/movie"
-        params = {
-            "api_key": "3d16ede65af012c2020d73640a669ddf",
-            "language": "es-ES",
-            "sort_by": "popularity.desc",
-            "release_date.gte": "1900-01-01",
-            "release_date.lte": "1960-12-31"
-        }
-    elif filtro == "Películas Más Conocidas":
-        # Obtener películas populares
-        url = "https://api.themoviedb.org/3/movie/popular"
-        params = {
-            "api_key": "3d16ede65af012c2020d73640a669ddf",
-            "language": "es-ES",
-            "page": 1
-        }
-    else:
-        resultado.insert(tk.END, "Filtro no válido.")
-        return
-    
-    # Realizar la solicitud a la API de TMDb
-    response = requests.get(url, params=params)
-    data = response.json()
-    
-    # Procesar la respuesta de la API y mostrar las recomendaciones
-    if data.get("results"):
-        for pelicula in data["results"]:
-            titulo = pelicula["title"]
-            resultado.insert(tk.END, f'Título: {titulo}\n')
-    else:
-        resultado.insert(tk.END, "No se encontraron recomendaciones para este filtro.")
+# Diccionario de películas con géneros como características y rutas de imagen
+movies = {
+    # Películas existentes
+    "Avengers End Game": {
+        "genres": ["Accion", "Ciencia Ficcion"],
+        "image_path": "AvengersEndGame.jpg"
+    },
+    "El diario de una pasion": {
+        "genres": ["Drama", "Romance"],
+        "image_path": "ElDiario.jpg"
+    },
+    "Harry Potter y la Camara Secreta": {
+        "genres": ["Aventura", "Fantasia"],
+        "image_path": "HarryCamaraSecreta.jpg"
+    },
+    "Una Esposa de Mentira": {
+        "genres": ["Comedia", "Romance"],
+        "image_path": "EsposaMentira.jpg"
+    },
+    "Apocalypto": {
+        "genres": ["Accion", "Aventura"],
+        "image_path": "Apocalypto.jpg"
+    },
+    "Ruega Por Nosotros": {
+        "genres": ["Terror", "Suspenso"],
+        "image_path": "RuegaPorNosotros.jpg"
+    },
+    "Nunca Digas su Nombre": {
+        "genres": ["Terror", "Suspenso", "Accion"],
+        "image_path": "NuncaDigasNombre.jpg"
+    },
+}
 
-# Función para obtener recomendaciones por género
-def obtener_recomendaciones_genero():
-    resultado.delete(1.0, tk.END)
-    
-    # Obtiene el género seleccionado por el usuario
-    genero = genero_combobox.get()
-    
-    if not genero:
-        return
-    
-    # Hacer una solicitud a la API de TMDb para obtener recomendaciones por género
-    url = "https://api.themoviedb.org/3/discover/movie"
-    params = {
-        "api_key": "3d16ede65af012c2020d73640a669ddf", 
-        "language": "es-ES",
-        "sort_by": "popularity.desc",
-        "with_genres": genero
-    }
-    
-    response = requests.get(url, params=params)
-    data = response.json()
-    
-    # Procesar la respuesta de la API y mostrar las recomendaciones por género
-    if data.get("results"):
-        for pelicula in data["results"]:
-            titulo = pelicula["title"]
-            resultado.insert(tk.END, f'Título: {titulo}\n')
-    else:
-        resultado.insert(tk.END, "No se encontraron recomendaciones para este género.")
+# Lista de nombres de películas recomendadas (limitadas a 6 películas)
+recommended_movies = list(movies.keys())[:6]
+
+# Clase para el motor de recomendación de películas basado en contenido
+class ContentBasedRecommender:
+    def __init__(self):
+        # Diccionario de películas con géneros como características y rutas de imagen
+        self.movies = movies  # Usamos el mismo diccionario de películas
+
+    def get_recommendations(self, selected_movies):
+        # Calcular los géneros seleccionados
+        selected_genres = set()
+        for movie in selected_movies:
+            if movie in self.movies:
+                selected_genres.update(self.movies[movie]["genres"])
+
+        # Calcular la similitud de género con otras películas y obtener las recomendaciones
+        recommendations = []
+        for movie, data in self.movies.items():
+            if movie not in selected_movies:
+                common_genres = set(data["genres"]).intersection(selected_genres)
+                similarity = len(common_genres) / len(selected_genres)
+                recommendations.append((movie, similarity))
+
+        # Ordenar películas por similitud descendente
+        recommendations.sort(key=lambda x: x[1], reverse=True)
+
+        # Retornar las películas más similares (hasta 3) que tienen similitud mayor a cero
+        filtered_recommendations = [movie for movie, sim in recommendations if sim > 0]
+        return filtered_recommendations
+
+# Variable global para rastrear la ventana de "Recomendaciones"
+recommendations_window = None
 
 # Crear la ventana principal
-ventana = tk.Tk()
-ventana.title("Recomendación de Películas")
+root = tk.Tk()
+root.title("Selección de Películas")
 
-pestañas = ttk.Notebook(ventana)
+# Crear un marco para organizar las imágenes en una cuadrícula
+image_frame = ttk.Frame(root)
+image_frame.pack()
 
-pestaña_genero = ttk.Frame(pestañas)
-pestañas.add(pestaña_genero, text="Filtro por Género")
+# Función para manejar la selección de películas
+def on_movie_select(movie):
+    update_image_display(movie)
 
-etiqueta_genero = tk.Label(pestaña_genero, text="Selecciona un género:")
-etiqueta_genero.pack()
+# Función para actualizar la visualización de imágenes seleccionadas
+def update_image_display(movie):
+    img = Image.open(movies[movie]["image_path"])
+    tk_img = ImageTk.PhotoImage(img)
 
-generos_disponibles = ["Acción", "Comedia", "Terror", "Drama", "Romance"]
-genero_combobox = ttk.Combobox(pestaña_genero, values=generos_disponibles)
-genero_combobox.pack()
+    # Si la película está seleccionada, aplicar un borde resaltado
+    if selected_movies[movie].get():
+        image_labels[movie].config(image=tk_img, borderwidth=3, relief="solid")
+        image_labels[movie].img = tk_img
+    else:
+        image_labels[movie].config(image=tk_img, borderwidth=0)
+        image_labels[movie].img = tk_img
 
-boton_recomendaciones_genero = tk.Button(pestaña_genero, text="Obtener Recomendaciones", command=obtener_recomendaciones_genero)
-boton_recomendaciones_genero.pack()
+# Lista para rastrear películas seleccionadas
+selected_movies = {movie: tk.BooleanVar() for movie in recommended_movies}
+for movie in recommended_movies:
+    selected_movies[movie].set(False)
 
-# Pestaña para los filtros adicionales
-pestaña_filtros_adicionales = ttk.Frame(pestañas)
-pestañas.add(pestaña_filtros_adicionales, text="Filtros Adicionales")
+# Crear etiquetas de imagen y casillas de verificación para mostrar las portadas de las películas en una cuadrícula
+image_labels = {}
+checkboxes = {}
+rows = 2  # Número de filas
+columns = 3  # Número de columnas
+current_row = 0
+current_column = 0
 
-# Etiqueta para el filtro
-etiqueta_filtro = tk.Label(pestaña_filtros_adicionales, text="Selecciona un filtro adicional:")
-etiqueta_filtro.pack()
+for movie in recommended_movies:
+    img = Image.open(movies[movie]["image_path"])
+    tk_img = ImageTk.PhotoImage(img)
 
-# Combobox para seleccionar el filtro adicional
-filtros_adicionales = ["Estrenos", "Cine de Oro", "Películas Más Conocidas"]
-filtro_combobox = ttk.Combobox(pestaña_filtros_adicionales, values=filtros_adicionales)
-filtro_combobox.pack()
+    image_label = ttk.Label(image_frame, image=tk_img)
+    image_label.img = tk_img
 
-# Botón para obtener recomendaciones basadas en el filtro adicional
-boton_recomendaciones = tk.Button(pestaña_filtros_adicionales, text="Obtener Recomendaciones", command=obtener_recomendaciones)
-boton_recomendaciones.pack()
+    select_checkbox = ttk.Checkbutton(image_frame, text=movie, variable=selected_movies[movie],
+                                     command=lambda movie=movie: on_movie_select(movie))
 
-# Cuadro de texto para mostrar las recomendaciones
-resultado = tk.Text(ventana, width=40, height=10)
-resultado.pack()
+    image_labels[movie] = image_label
 
-# Agregar las pestañas a la ventana
-pestañas.pack()
+    image_label.grid(row=current_row, column=current_column, padx=10, pady=10)
+    select_checkbox.grid(row=current_row + 1, column=current_column, padx=10, pady=10)
+
+    current_column += 1
+    if current_column >= columns:
+        current_column = 0
+        current_row += 2
+
+# Función para obtener películas recomendadas y mostrarlas en una nueva ventana
+def show_recommendations():
+    global recommendations_window  # Usar la variable global
+
+    # Cerrar la ventana de "Recomendaciones" si está abierta
+    if recommendations_window:
+        recommendations_window.destroy()
+
+    selected = [movie for movie, var in selected_movies.items() if var.get()]
+    recommendations = ContentBasedRecommender().get_recommendations(selected)
+    
+    if not recommendations:
+        messagebox.showinfo("Sin recomendaciones", "No se encontraron recomendaciones para las películas seleccionadas.")
+    else:
+        # Crear una nueva ventana para mostrar las recomendaciones
+        recommendations_window = tk.Toplevel(root)
+        recommendations_window.title("Recomendaciones")
+        
+        # Crear un marco para organizar las imágenes en una cuadrícula en la nueva ventana
+        recommendations_frame = ttk.Frame(recommendations_window)
+        recommendations_frame.pack()
+
+        # Crear etiquetas de imagen y texto para mostrar las recomendaciones
+        recommendations_labels = {}
+        rows = 2  # Número de filas
+        columns = 3  # Número de columnas
+        current_row = 0
+        current_column = 0
+
+        for movie in recommendations:
+            img = Image.open(movies[movie]["image_path"])
+            tk_img = ImageTk.PhotoImage(img)
+
+            recommendations_label = ttk.Label(recommendations_frame, image=tk_img, text=movie, compound=tk.TOP)
+            recommendations_label.img = tk_img
+
+            recommendations_labels[movie] = recommendations_label
+
+            recommendations_label.grid(row=current_row, column=current_column, padx=10, pady=10)
+
+            current_column += 1
+            if current_column >= columns:
+                current_column = 0
+                current_row += 1
+
+# Botón para obtener películas recomendadas y mostrarlas en una nueva ventana
+recommend_button = ttk.Button(root, text="Mostrar Recomendaciones", command=show_recommendations)
+recommend_button.pack(pady=10)
 
 # Iniciar la aplicación
-ventana.mainloop()
+root.mainloop()
